@@ -64,6 +64,7 @@ add_executable(logid
         backend/hidpp20/features/ThumbWheel.cpp
         backend/dj/Report.cpp
         util/mutex_queue.h
+        util/path.cpp
         util/workqueue.cpp
         util/worker_thread.cpp
         util/task.cpp

@@ -26,13 +26,14 @@
 #include "DeviceManager.h"
 #include "logid.h"
 #include "InputDevice.h"
+#include "util/path.h"
 #include "util/workqueue.h"
 
 #define LOGID_VIRTUAL_INPUT_NAME "LogiOps Virtual Input"
 
 #define DEFAULT_CONFIG_FILE_ETC "/etc/logid.cfg"
-#define DEFAULT_CONFIG_FILE_HOME "/.config/logid/logid.cfg"
-#define DEFAULT_CONFIG_FILE_DOT "/.logid"
+#define DEFAULT_CONFIG_FILE_HOME ".config/logid/logid.cfg"
+#define DEFAULT_CONFIG_FILE_DOT ".logid"
 
 #ifndef LOGIOPS_VERSION
 #define LOGIOPS_VERSION "null"
@@ -175,8 +176,8 @@ int main(int argc, char** argv)
     std::string home = std::getenv("HOME");
 
     options.config_files.push(DEFAULT_CONFIG_FILE_ETC);
-    options.config_files.push(home + DEFAULT_CONFIG_FILE_HOME);
-    options.config_files.push(home + DEFAULT_CONFIG_FILE_DOT);
+    options.config_files.push(concatPath(home, DEFAULT_CONFIG_FILE_HOME));
+    options.config_files.push(concatPath(home, DEFAULT_CONFIG_FILE_DOT));
 
     readCliOptions(argc, argv, options);
 
