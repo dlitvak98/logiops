@@ -24,6 +24,7 @@
 #include <memory>
 #include <chrono>
 #include <set>
+#include <stack>
 
 #define LOGID_DEFAULT_IO_TIMEOUT std::chrono::seconds(2)
 #define LOGID_DEFAULT_WORKER_COUNT 4
@@ -33,7 +34,7 @@ namespace logid
     class Configuration
     {
     public:
-        explicit Configuration(const std::string& config_file);
+        explicit Configuration(std::stack<std::string>& config_file);
         Configuration() = default;
         libconfig::Setting& getSetting(const std::string& path);
         std::string getDevice(const std::string& name);

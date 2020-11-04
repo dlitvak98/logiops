@@ -16,6 +16,7 @@
  *
  */
 
+#include <stack>
 #include <utility>
 #include <vector>
 #include <map>
@@ -27,18 +28,28 @@ using namespace logid;
 using namespace libconfig;
 using namespace std::chrono;
 
-Configuration::Configuration(const std::string& config_file)
+Configuration::Configuration(std::stack<std::string>& config_files)
 {
-    try {
-        _config.readFile(config_file.c_str());
-    } catch(const FileIOException &e) {
-        logPrintf(ERROR, "I/O Error while reading %s: %s", config_file.c_str(),
-                e.what());
-        throw e;
-    } catch(const ParseException &e) {
-        logPrintf(ERROR, "Parse error in %s, line %d: %s", e.getFile(),
-                e.getLine(), e.getError());
-        throw e;
+    bool config_file_read = false;
+    while (!config_files.empty() && !config_file_read) {
+        std::string config_file = config_files.top();
+        logPrintf(INFO, "Attempting to read %s", config_file.c_str());
+        config_files.pop();
+        try {
+            _config.readFile(config_file.c_str());
+            config_file_read = true;
+        } catch(const FileIOException &e) {
+            logPrintf(WARN, "I/O Error while reading %s: %s",
+                    config_file.c_str(), e.what());
+        } catch(const ParseException &e) {
+            logPrintf(ERROR, "Parse error in %s, line %d: %s", e.getFile(),
+                    e.getLine(), e.getError());
+        }
+    }
+
+    if (config_file_read == false) {
+        logPrintf(ERROR, "No config files were read");
+        throw new std::exception();
     }
 
     const Setting &root = _config.getRoot();

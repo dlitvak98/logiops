@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <mutex>
+#include <stack>
 
 #include "util/log.h"
 #include "DeviceManager.h"
@@ -28,7 +29,10 @@
 #include "util/workqueue.h"
 
 #define LOGID_VIRTUAL_INPUT_NAME "LogiOps Virtual Input"
-#define DEFAULT_CONFIG_FILE "/etc/logid.cfg"
+
+#define DEFAULT_CONFIG_FILE_ETC "/etc/logid.cfg"
+#define DEFAULT_CONFIG_FILE_HOME "/.config/logid/logid.cfg"
+#define DEFAULT_CONFIG_FILE_DOT "/.logid"
 
 #ifndef LOGIOPS_VERSION
 #define LOGIOPS_VERSION "null"
@@ -39,7 +43,7 @@ using namespace logid;
 
 struct CmdlineOptions
 {
-    std::string config_file = DEFAULT_CONFIG_FILE;
+    std::stack<std::string> config_files;
 };
 
 LogLevel logid::global_loglevel = INFO;
@@ -135,7 +139,7 @@ void readCliOptions(const int argc, char** argv, CmdlineOptions& options)
                     logPrintf(ERROR, "Config file is not specified.");
                     exit(EXIT_FAILURE);
                 }
-                options.config_file = argv[i];
+                options.config_files.push(argv[i]);
                 break;
             }
             case Option::Help:
@@ -144,9 +148,15 @@ Usage: %s [options]
 Possible options are:
     -v,--verbose [level]       Set log level to debug/info/warn/error (leave blank for debug)
     -V,--version               Print version number
-    -c,--config [file path]    Change config file from default at %s
+    -c,--config [file path]    Change config file from default
     -h,--help                  Print this message.
-)", LOGIOPS_VERSION, argv[0], DEFAULT_CONFIG_FILE);
+
+Default config files will attempt to be read in the following order:
+    - $HOME/%s
+    - $HOME/%s
+    - %s
+)", LOGIOPS_VERSION, argv[0], DEFAULT_CONFIG_FILE_DOT,
+DEFAULT_CONFIG_FILE_HOME, DEFAULT_CONFIG_FILE_ETC);
                 exit(EXIT_SUCCESS);
             case Option::Version:
                 printf("%s\n", LOGIOPS_VERSION);
@@ -161,11 +171,18 @@ Possible options are:
 int main(int argc, char** argv)
 {
     CmdlineOptions options{};
+
+    std::string home = std::getenv("HOME");
+
+    options.config_files.push(DEFAULT_CONFIG_FILE_ETC);
+    options.config_files.push(home + DEFAULT_CONFIG_FILE_HOME);
+    options.config_files.push(home + DEFAULT_CONFIG_FILE_DOT);
+
     readCliOptions(argc, argv, options);
 
     // Read config
     try {
-        global_config = std::make_shared<Configuration>(options.config_file);
+        global_config = std::make_shared<Configuration>(options.config_files);
     }
     catch (std::exception &e) {
         global_config = std::make_shared<Configuration>();
